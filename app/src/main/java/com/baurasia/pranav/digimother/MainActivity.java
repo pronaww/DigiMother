@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     String string = "No Child ID detected";
 
     AlertDialog.Builder builder;
-    ImageView img;
+//    ImageView img;
     private final int CAMERA_REQUEST_CODE = 2;
     private final int READ_REQUEST_CODE = 3;
     private final int WRITE_REQUEST_CODE = 1;
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 //        }
 
 
-        img = findViewById(R.id.imageView);
+//        img = findViewById(R.id.imageView);
     }
 
 
@@ -100,9 +100,6 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED){
             //We don't have permission
             ActivityCompat.requestPermissions(this, new String[] {permission}, requestCode);
-        } else {
-            //We have permission already granted
-//            Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -152,7 +149,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ScanActivity.class);
         intent.putExtra(ScanConstants.OPEN_INTENT_PREFERENCE, preference);
         startActivityForResult(intent, REQUEST_CODE);
-        Log.d("TAG", "openGallery finished");
     }
 
 
@@ -161,10 +157,14 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 99 && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getExtras().getParcelable(ScanConstants.SCANNED_RESULT);
-            if(ratioChecker(uri)){
-                PhotoScanInBack photoScanInBack = new PhotoScanInBack();
-                photoScanInBack.execute(uri);
-            }
+            Intent intent1 = new Intent(MainActivity.this, TableActivity.class);
+            intent1.putExtra("scanned_image",uri);
+            startActivity(intent1);
+//            Uri uri = data.getExtras().getParcelable(ScanConstants.SCANNED_RESULT);
+//            if(ratioChecker(uri)){
+//                PhotoScanInBack photoScanInBack = new PhotoScanInBack();
+//                photoScanInBack.execute(uri);
+//            }
         }
     }
 
@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
 //            return false;
 //        }
 //        else {
-            img.setImageBitmap(bitmap);
+//            img.setImageBitmap(bitmap);
             return true;
 //        }
 
@@ -220,6 +220,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(Uri... params) {
+            Log.d("Background", "operation started");
             Uri uri = params[0];
             Bitmap bitmap = null;
             try {
@@ -260,61 +261,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    private static final int INPUT_SIZE = 224;
-    private static final int IMAGE_MEAN = 128;
-    private static final float IMAGE_STD = 128.0f;
-    private static final String INPUT_NAME = "input";
-    private static final String OUTPUT_NAME = "final_result";
-
-    private static final String MODEL_FILE = "file:///android_asset/graph.pb";
-    private static final String LABEL_FILE = "file:///android_asset/labels.txt";
-
-    private static final boolean SAVE_PREVIEW_BITMAP = false;
-
-    private static final boolean MAINTAIN_ASPECT = true;
-
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
-
-    private Classifier classifier;
-
-    private Integer sensorOrientation;
-
-    private int previewWidth = 0;
-    private int previewHeight = 0;
-    private byte[][] yuvBytes;
-    private int[] rgbBytes = null;
-    private Bitmap rgbFrameBitmap = null;
-    private Bitmap croppedBitmap = null;
-
-    private Bitmap cropCopyBitmap;
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    private Bitmap rotationChecker(Bitmap bitmap) {
-        classifier =
-                TensorFlowImageClassifier.create(
-                        getAssets(),
-                        MODEL_FILE,
-                        LABEL_FILE,
-                        INPUT_SIZE,
-                        IMAGE_MEAN,
-                        IMAGE_STD,
-                        INPUT_NAME,
-                        OUTPUT_NAME);
-
-        Bitmap cropBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight()/2, false);
-
-        final List<Classifier.Recognition> results = classifier.recognizeImage(cropBitmap);
-
-        for(int i=0; i<results.size(); i++) {
-            Log.d("Title is ", results.get(i).getTitle());
-            Log.d("Id is ", results.get(i).getId());
-            Log.d("Confidence is ", results.get(i).getId());
-        }
-        return bitmap;
-
-    }
 
     public Vector<qrCodeWithLocation> qrFinder(Bitmap bitmap) {
 
@@ -382,17 +328,16 @@ public class MainActivity extends AppCompatActivity {
 
    private void template1 (Vector<qrCodeWithLocation> qrCodes) {
 
-        Vector<varQRCode> varQRCodes = if_matched_with_vaccine_page_template();
+        Vector<varQRCode> varQRCodesXML = xmlReader();
 
        //For checking if childID found then only check vaccines
        String childID = childIDFinder(qrCodes, new vector2(0,0), new vector2(imageWidth, imageHeight/3));
-       if (varQRCodes !=null) {
+       if (varQRCodesXML !=null) {
 
-           Log.d("Awesome is", " awesome");
            child kid = new child(childID);
 
            for (qrCodeWithLocation qr: qrCodes) {
-                for(varQRCode vqrc: varQRCodes) {
+                for(varQRCode vqrc: varQRCodesXML) {
                     checkVaccine(qr, vqrc.name, vqrc.startingCoordinates, vqrc.endingCoordinates);
                 }
 
@@ -439,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-   private Vector<varQRCode> if_matched_with_vaccine_page_template () {
+   private Vector<varQRCode> xmlReader () {
         Log.d("here", "here");
        Vector<varQRCode> varQRCodes = new Vector<>();
        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
